@@ -1,5 +1,21 @@
+"""
+한글 전처리
+- 영한 변환
+- 한영 변환
+- 한글 자모 분리
+- 한글 자모 결합
+
+magic numbers:
+- the number of Consonant: 28
+- the number of Vowel: 21
+"""
+
 class HangulAutomata():
     def __init__(self):
+        # hangul start & end code
+        self.start_code = ord('\uAC00')
+        self.end_code = ord('\uD7A3')
+
         # chosung
         self.chosung_list = [
             'ㄱ',  'ㄲ',  'ㄴ',  'ㄷ',  'ㄸ',  'ㄹ',
@@ -100,7 +116,7 @@ class HangulAutomata():
             jongsung = 0
 
         self.resetStack()
-        return chr(((chosung * 21) + jungsung) * 28 + jongsung + ord('\uAC00'))
+        return chr(((chosung * 21) + jungsung) * 28 + jongsung + self.start_code)
 
     # normalize
     def normalizeString(self, text):
@@ -176,87 +192,38 @@ class HangulAutomata():
 
         return "".join(self.builder)
 
+    # hangul characters to jamo
+    def hanToJamo(self, text):
+        self.resetBuilder()
 
+        for c in text:
+            if ((ord(c) >= self.start_code) & (ord(c) <= self.end_code)):
+                jong_code = ord(c) - self.start_code
+                cho_code = jong_code // (21 * 28)
+                jong_code = jong_code % (21 * 28)
+                jung_code = jong_code // 28
+                jong_code = jong_code % 28
 
-
-def engToHan(text):
-    # initialize
-    stack_list = []
-    builder_list = []
-    state = State()
-    state.resetState()
-
-    for c in text:
-        # get korean character
-        hanChar = alphabet_to_hangul[c]
-
-        # 초기 상태
-        if (state.state is None):
-            if (hanChar in chosung_list):
-                stack_list.append(hanChar)
-                state.chosungState()
+                self.addBuilder(self.chosung_list[cho_code])
+                self.addBuilder(self.jungsung_list[jung_code])
+                if (jong_code != 0): self.addBuilder(self.jongsung_list[jong_code])
             else:
-                builder_list.append(hanChar)
-        # 초성 상태
-        elif (state.state == "CHOSUNG"):
-            if (hanChar in jungsung_list):
-                stack_list.append(hanChar)
-                state.jungsungState()
-            elif (hanChar in chosung_list):
-                builder_list.append(stack_list.pop())
-                stack_list.append(hanChar)
+                self.addBuilder(c)
+
+        return "".join(self.builder)
+
+    # jamo characters to english
+    def jamoToEng(self, text):
+        self.resetBuilder()
+
+        for c in text:
+            if (c in self.hangul_to_alphabet.keys()):
+                self.addBuilder(self.hangul_to_alphabet[c])
             else:
-                builder_list.append(stack_list.pop())
-                builder_list.append(hanChar)
-                state.resetState()
-        # 중성 상태
-        elif (state.state == "JUNGSUNG"):
-            if (hanChar in jongsung_list):
-                stack_list.append(hanChar)
-                state.jongsungState()
-            elif (stack_list[-1]+hanChar in double_jungsung_list):
-                stack_list.append(stack_list.pop()+hanChar)
-            else:
-                builder_list.append(mergeChar(stack_list))
-                builder_list.append(hanChar)
-                state.resetState()
-        # 종성 상태
-        elif (state.state == "JONGSUNG"):
-            if (hanChar in jungsung_list):
-                prev = stack_list.pop()
-                builder_list.append(mergeChar(stack_list))
-                stack_list.append(prev)
-                stack_list.append(hanChar)
-                state.jungsungState()
-            elif (stack_list[-1]+hanChar in double_jongsung_list):
-                stack_list.append(hanChar)
-            elif (hanChar in chosung_list):
-                builder_list.append(mergeChar(stack_list))
-                stack_list.append(hanChar)
-                state.chosungState()
-            else:
-                builder_list.append(mergeChar(stack_list))
-                builder_list.append(hanChar)
-                state.resetState()
-        else:
-            print("do nothing")
+                self.addBuilder(c)
 
-    if (len(stack_list) == 1):
-        builder_list.append(stack_list.pop())
-    elif (len(stack_list) > 1):
-        builder_list.append(mergeChar(stack_list))
-    else:
-        print("also do nothing")
+        return "".join(self.builder)
 
-    return "".join(builder_list)
-
-
-
-
-
-
-
-
-
-
-
+    # hangul characters to english
+    def hanToEng(self, text):
+        return self.jamoToEng(self.hanToJamo(text))
