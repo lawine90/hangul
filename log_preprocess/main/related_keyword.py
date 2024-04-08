@@ -1,4 +1,6 @@
 
+from typing import List, Tuple
+
 import re
 from itertools import islice, tee
 
@@ -6,7 +8,7 @@ from itertools import islice, tee
 _SPLIT_PATTERN = re.compile(pattern=r"[\s|,|\.]+")
 
 
-def sliding_log(iterable, size=2):
+def sliding_log(iterable: List[Tuple], size: int = 2) -> List[str]:
     # structure index
     _ts, _kwd = 0, 1
 
@@ -17,10 +19,10 @@ def sliding_log(iterable, size=2):
     iterators = tee(tmp, size)
     iterators = [islice(iterator, i, None) for i, iterator in enumerate(iterators)]
 
-    return filter(lambda t: t[0] != t[1], zip(*iterators))
+    return list(filter(lambda t: t[0] != t[1], zip(*iterators)))
 
 
-def keyword_type(mkey, skey):
+def keyword_type(mkey: str, skey: str) -> str:
     """
     keyword types:
         mod: if n of terms in mkey & skey is same and each diff n of terms is 1, then query type is modification

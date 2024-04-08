@@ -122,11 +122,11 @@ class HangulAutomata(object):
 
     # normalize
     @staticmethod
-    def normalizeString(text):
+    def normalizeString(text: str) -> str:
         return text.lower().strip()
 
     # english character to hangul
-    def engToHan(self, text):
+    def engToHan(self, text: str) -> str:
         self.resetState()
         self.resetStack()
         self.resetBuilder()
@@ -196,7 +196,7 @@ class HangulAutomata(object):
         return "".join(self.builder)
 
     # hangul characters to jamo
-    def hanToJamo(self, text):
+    def hanToJamo(self, text: str) -> str:
         self.resetBuilder()
 
         for c in text:
@@ -217,7 +217,7 @@ class HangulAutomata(object):
         return "".join(self.builder)
 
     # jamo characters to english
-    def jamoToEng(self, text):
+    def jamoToEng(self, text: str) -> str:
         self.resetBuilder()
 
         for c in text:
@@ -229,5 +229,5 @@ class HangulAutomata(object):
         return "".join(self.builder)
 
     # hangul characters to english
-    def hanToEng(self, text):
+    def hanToEng(self, text: str) -> str:
         return self.jamoToEng(self.hanToJamo(text))
