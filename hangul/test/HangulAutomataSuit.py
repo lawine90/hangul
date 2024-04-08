@@ -1,60 +1,53 @@
 
 import unittest
+from hangul.main.HangulAutomata import HangulAutomata
 
-if __name__ == '__main__':
-    if __package__ is None:
-        import sys
-        from os import path
-        print(path.dirname( path.dirname( path.abspath(__file__) ) ))
-        sys.path.append(path.dirname( path.dirname( path.abspath(__file__) ) ))
-        from ..main.HangulAutomata import HangulAutomata
-    else:
-        from ..main.HangulAutomata import HangulAutomata
 
-    class HangulAutomataTest(unittest.TestCase):
-        # test1 english to hangul test
-        def testEngToHan(self):
-            h = HangulAutomata()
-            result1 = h.engToHan("dkssudgktpdy")
-            print("engToHan result: ", result1)
+class HangulAutomataTest(unittest.TestCase):
+    # test1 english to hangul test
+    def testEngToHan(self):
+        # class
+        h = HangulAutomata()
 
-            self.assertEqual(
-                result1,
-                "안녕하세요"
-            )
+        # test keywords
+        eng_to_han_tuple = [
+            ("dkssudgktpdy", "안녕하세요"),
+            ("dkdidjdudhdydndbdmdl", "아야어여오요우유으이"),
+            ("wmfuqkfqrhrktldhqthtj", "즈려밟고가시옵소서"),
+        ]
 
-            result2 = h.engToHan("dkdidjdudhdydndbdmdl")
-            self.assertEqual(
-                result2,
-                "아야어여오요우유으이"
-            )
+        for input, output in eng_to_han_tuple:
+            result = h.engToHan(text=input)
 
-            result3 = h.engToHan("wmfuqkfqrhrktldhqthtj")
-            self.assertEqual(
-                result3,
-                "즈려밟고가시옵소서"
-            )
+            print("engToHan input: ", "dkssudgktpdy")
+            print("engToHan output: ", result, "\n")
 
-        # test2 hangul to jamo test
-        def testHanToJamo(self):
-            h = HangulAutomata()
-            result1 = h.hanToJamo("안녕하세요")
-            print("hanToJamo result: ", result1)
+            self.assertEqual(first=result, second=output)
 
-            self.assertEqual(
-                result1,
-                "ㅇㅏㄴㄴㅕㅇㅎㅏㅅㅔㅇㅛ"
-            )
+    # test2 hangul to jamo test
+    def testHanToJamo(self):
+        h = HangulAutomata()
+        result1 = h.hanToJamo("안녕하세요")
+        print("hanToJamo input: ", "안녕하세요")
+        print("hanToJamo output: ", result1, "\n")
 
-        # test3 hangul to english test
-        def testHanToEng(self):
-            h = HangulAutomata()
-            result1 = h.hanToEng("ㅗ메ㅔㅛ 채야ㅜㅎ!")
-            print("hanToEng result: ", result1)
+        self.assertEqual(
+            result1,
+            "ㅇㅏㄴㄴㅕㅇㅎㅏㅅㅔㅇㅛ"
+        )
 
-            self.assertEqual(
-                result1,
-                "happy coding!"
-            )
+    # test3 hangul to english test
+    def testHanToEng(self):
+        h = HangulAutomata()
+        result1 = h.hanToEng("ㅗ메ㅔㅛ 채야ㅜㅎ!")
+        print("hanToEng input: ", "ㅗ메ㅔㅛ 채야ㅜㅎ!")
+        print("hanToEng output: ", result1, "\n")
 
+        self.assertEqual(
+            result1,
+            "happy coding!"
+        )
+
+
+if __name__ == "__main__":
     unittest.main()
