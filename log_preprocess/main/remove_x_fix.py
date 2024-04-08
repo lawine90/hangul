@@ -1,27 +1,14 @@
 
 import ahocorasick
+from typing import List, Tuple
 
 
-def create_trie(
-        spark: SparkSession,
-        paths: List[str],
-        col_name: str = "keyword"
-) -> ahocorasick.Automaton:
-    """hdfs에서 data read 후 col_name의 키워드로 trie return
-    :param spark: spark
-    :param paths: hdfs path
+def create_trie(patterns: List[str]) -> ahocorasick.Automaton:
+    """
+    :param patterns: 트라이를 만들 패턴
     :param col_name: 패턴으로 사용할 column name
     :return: 아호코라식 trie
     """
-    # read df
-    dfs = []
-    for p in paths:
-        dfs.append(read(spark=spark, path=p, file_format="json").select(col_name))
-
-    # collect as pattern list
-    patterns = reduce(DataFrame.union, dfs).distinct() \
-        .rdd.map(lambda r: r[0]).collect()
-
     # create trie
     a = ahocorasick.Automaton()
     for i, k in enumerate(patterns):
@@ -31,33 +18,26 @@ def create_trie(
     return a
 
 
-def aho_idx(
+def find_pattern(
         query: str,
         trie: ahocorasick.Automaton
-) -> Tuple[List[int], List[int]]:
+) -> List[Tuple[int, int, str]]:
     """아호코라식 알고리즘으로 query에 포함된 패턴의 위치를 return
     :param query: 인덱스를 검색할 입력 쿼리
     :param trie: 아호코라식 trie
-    :return: (
-        List[int]: 포함된 패턴들이 등장하는 start index
-        List[ind]: 포함된 패턴들이 등장하는 end index
-    )
+    :return: [
+        int: 패턴의 시작 인덱스
+        int: 패턴의 종료 인덱스
+        str: 찾아낸 패턴
+    ]
     """
-    index_tuple = [
-        (end_idx - len(key) + 1, end_idx)
+    return [
+        (end_idx - len(key) + 1, end_idx, key)
         for end_idx, (_, key) in trie.iter(query)
     ]
 
-    if len(index_tuple) != 0:
-        return (
-            [i[0] for i in index_tuple],
-            [i[1] for i in index_tuple],
-        )
-    else:
-        return [], []
 
-
-def exclude_xfix(
+def remove_x_fix(
         query: str,
         trie: ahocorasick.Automaton,
         fix_type: str
@@ -68,20 +48,22 @@ def exclude_xfix(
     :param fix_type: 매칭 타입 (prefix, infix, suffix, exact 중 하나)
     :return: 매칭 여부
     """
-    index_tuple = aho_idx(query=query, trie=trie)
+    index_tuple = find_pattern(query=query, trie=trie)
+    start_index = [t[0] for t in index_tuple]
+    end_index = [t[1] for t in index_tuple]
     query_len = len(query) - 1  # 키워드의 길이는 마지막 인덱스 +1이므로 길이에서 -1
 
     # 헷갈리는 포인트!
     # prefix/suffix/infix가 포함된 경우는 제거를 하기 위함
     # .filter() 적용을 위해 포함된 경우 False를 return
     if fix_type == "prefix":
-        is_exist = False if (0 in index_tuple[0]) else True
+        is_exist = False if (0 in start_index) else True
     elif fix_type == "suffix":
-        is_exist = False if query_len in index_tuple[1] else True
+        is_exist = False if query_len in end_index else True
     elif fix_type == "infix":
-        is_exist = False if len(index_tuple[0]) != 0 else True
+        is_exist = False if len(index_tuple) != 0 else True
     elif fix_type == "exact":
-        is_exist = False if (0 in index_tuple[0]) and (query_len in index_tuple[1]) else True
+        is_exist = False if (0 in start_index) and (query_len in end_index) else True
     else:
         raise "fix_type should be one of 'prefix', 'suffix', 'infix'"
 
