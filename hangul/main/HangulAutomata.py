@@ -10,6 +10,8 @@ magic numbers:
 - the number of Vowel: 21
 """
 
+from typing import List, Optional
+
 
 class HangulAutomata(object):
     def __init__(self):
@@ -126,14 +128,28 @@ class HangulAutomata(object):
         return text.lower().strip()
 
     # english character to hangul
-    def engToHan(self, text: str) -> str:
+    # 2024-06-11 ignore_kor 옵션 추가
+    #   기존 함수는 정상적인 한글이 입력될 경우 에러 발생
+    #   정상 한글이 입력되더라도 무시하고 영문만 한글로 변환할 수 있는 ignore_kor 옵션 추가
+    #   e.g. 아자개10kg특등급 -> 아자개10ㅏㅎ특등급
+    # TODO 현재 로직에서 영문 대문자의 변환이 쌍자음이 있는 경우는 한글로 변환되지만 쌍자음이 없는 경우는 대문자 그대로 변환됨
+    #   e.g. RkTkaldk -> 까싸미아
+    #   e.g. CkXk -> CㅏXㅏ
+    #   추후 쌍자음이 없는 케이스 어떻게 할지 수정 필요
+    def engToHan(self, text: str, ignore_kor: bool = False) -> str:
         self.resetState()
         self.resetStack()
         self.resetBuilder()
 
         for c in text:
             # get korean character
-            han_char = self.alphabet_to_hangul[c]
+            if ignore_kor:
+                try:
+                    han_char = self.alphabet_to_hangul[c]
+                except:
+                    han_char = c
+            else:
+                han_char = self.alphabet_to_hangul[c]
 
             # 초기 상태
             if self.state is None:
@@ -231,3 +247,27 @@ class HangulAutomata(object):
     # hangul characters to english
     def hanToEng(self, text: str) -> str:
         return self.jamoToEng(self.hanToJamo(text))
+
+    # check list of str contains only chosung
+    @staticmethod
+    def isOnlyChosung(text: List[str]) -> bool:
+        for c in text:
+            if not (
+                    (ord('\u0020') <= ord(c) <= ord('\u00A0')) or
+                    (ord('\u3131') <= ord(c) <= ord('\u314e'))
+            ):
+                return False
+        return True
+
+    # get chosung only
+    def getChosung(self, text: str) -> Optional[str]:
+        chos = []
+
+        for c in text:
+            jamo = self.hanToJamo(text=c)[0]
+            if (jamo in self.chosung_list or
+                    c == ' ' or ('0' <= c <= '9')):
+                chos.append(jamo)
+            else:
+                return None
+        return "".join(chos)
