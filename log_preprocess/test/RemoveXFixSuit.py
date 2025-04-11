@@ -1,6 +1,6 @@
 
 import unittest
-from log_preprocess.main.remove_x_fix import create_trie, find_pattern, remove_x_fix
+from log_preprocess.main.remove_x_fix import create_trie, find_all, remove_x_fix
 
 
 class RemoveXFixTest(unittest.TestCase):
@@ -14,12 +14,12 @@ class RemoveXFixTest(unittest.TestCase):
         founds = [
             [(0, 2, '아이폰')],
             [(0, 2, '갤럭시')],
-            [],
+            [(-1, -1, '')],
             [(0, 2, '아이폰'), (4, 6, '갤럭시')]
         ]
 
         for k, f in zip(keywords, founds):
-            found = find_pattern(query=k, trie=trie)
+            found = find_all(query=k, trie=trie)
             print(f"keyword: {k}")
             print(f"found: {found}\n")
 

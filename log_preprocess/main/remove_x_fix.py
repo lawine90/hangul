@@ -6,7 +6,6 @@ from typing import List, Tuple
 def create_trie(patterns: List[str]) -> ahocorasick.Automaton:
     """
     :param patterns: 트라이를 만들 패턴
-    :param col_name: 패턴으로 사용할 column name
     :return: 아호코라식 trie
     """
     # create trie
@@ -18,7 +17,7 @@ def create_trie(patterns: List[str]) -> ahocorasick.Automaton:
     return a
 
 
-def find_pattern(
+def find_all(
         query: str,
         trie: ahocorasick.Automaton
 ) -> List[Tuple[int, int, str]]:
@@ -31,10 +30,15 @@ def find_pattern(
         str: 찾아낸 패턴
     ]
     """
-    return [
+    found = [
         (end_idx - len(key) + 1, end_idx, key)
         for end_idx, (_, key) in trie.iter(query)
     ]
+
+    if len(found) != 0:
+        return found
+    else:
+        return [(-1, -1, '')]
 
 
 def remove_x_fix(
@@ -48,7 +52,7 @@ def remove_x_fix(
     :param fix_type: 매칭 타입 (prefix, infix, suffix, exact 중 하나)
     :return: 매칭 여부
     """
-    index_tuple = find_pattern(query=query, trie=trie)
+    index_tuple = find_all(query=query, trie=trie)
     start_index = [t[0] for t in index_tuple]
     end_index = [t[1] for t in index_tuple]
     query_len = len(query) - 1  # 키워드의 길이는 마지막 인덱스 +1이므로 길이에서 -1
@@ -68,3 +72,17 @@ def remove_x_fix(
         raise "fix_type should be one of 'prefix', 'suffix', 'infix'"
 
     return is_exist
+
+
+def find_x_fix(
+        query: str,
+        trie: ahocorasick.Automaton,
+        fix_type: str
+) -> bool:
+    """
+    :param query: 인덱스를 검색할 입력 쿼리
+    :param trie: aho-corasick trie 객체
+    :param fix_type: 매칭 타입 (prefix, infix, suffix, exact 중 하나)
+    :return: 매칭 여부
+    """
+    return not remove_x_fix(query=query, trie=trie, fix_type=fix_type)
