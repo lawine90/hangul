@@ -189,10 +189,6 @@ class HangulAutomata(object):
         return text.lower().strip()
 
     # english character to hangul
-    # 2024-06-11 ignore_kor 옵션 추가
-    #   기존 함수는 정상적인 한글이 입력될 경우 에러 발생
-    #   정상 한글이 입력되더라도 무시하고 영문만 한글로 변환할 수 있는 ignore_kor 옵션 추가
-    #   e.g. 아자개10kg특등급 -> 아자개10ㅏㅎ특등급
     # TODO 현재 로직에서 영문 대문자의 변환이 쌍자음이 있는 경우는 한글로 변환되지만 쌍자음이 없는 경우는 대문자 그대로 변환됨
     #   e.g. RkTkaldk -> 까싸미아
     #   e.g. CkXk -> CㅏXㅏ
