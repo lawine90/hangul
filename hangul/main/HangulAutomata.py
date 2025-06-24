@@ -28,8 +28,7 @@ class HangulAutomata(object):
         self.chosung_list = [
             'ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ',
             'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ',
-            'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ',
-            'ㅎ'
+            'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'
         ]
 
         # chosung with index
@@ -122,6 +121,68 @@ class HangulAutomata(object):
         self.resetStack()
         return chr(((chosung * 21) + jungsung) * 28 + jongsung + self.start_code)
 
+    def stateCheck(self, han_char: str):
+        """
+        stack: 분해된 자소단위 character를 모아두는 stack
+        builder: stack의 자소단위 character를 조합한 한글을 담아두는 builder
+        mergeChar(): stack의 자소단위 character를 조합하여 builder에 추가
+        """
+
+        # 초기 상태
+        if self.state is None:
+            if han_char in self.chosung_list:
+                self.addStack(han_char)
+                self.chosungState()
+            else:
+                self.addBuilder(han_char)
+        # 초성 상태
+        elif self.state == "CHOSUNG":
+            if han_char in self.jungsung_list:
+                self.addStack(han_char)
+                self.jungsungState()
+            elif han_char in self.chosung_list:
+                self.addBuilder(self.stack.pop())
+                self.addStack(han_char)
+            else:
+                self.addBuilder(self.stack.pop())
+                self.addBuilder(han_char)
+                self.resetState()
+        # 중성 상태
+        elif self.state == "JUNGSUNG":
+            if han_char in self.jongsung_list:
+                self.addStack(han_char)
+                self.jongsungState()
+            elif self.stack[-1] + han_char in self.double_jungsung_list:
+                self.addStack(self.stack.pop() + han_char)
+            elif han_char in self.chosung_list:
+                self.addBuilder(self.mergeChar())
+                self.addStack(han_char)
+                self.chosungState()
+            else:
+                self.addBuilder(self.mergeChar())
+                self.addBuilder(han_char)
+                self.resetState()
+        # 종성 상태
+        elif self.state == "JONGSUNG":
+            if han_char in self.jungsung_list:
+                prev = self.stack.pop()
+                self.addBuilder(self.mergeChar())
+                self.addStack(prev)
+                self.addStack(han_char)
+                self.jungsungState()
+            elif self.stack[-1] + han_char in self.double_jongsung_list:
+                self.addStack(han_char)
+            elif han_char in self.chosung_list:
+                self.addBuilder(self.mergeChar())
+                self.addStack(han_char)
+                self.chosungState()
+            else:
+                self.addBuilder(self.mergeChar())
+                self.addBuilder(han_char)
+                self.resetState()
+        else:
+            print("do nothing")
+
     # normalize
     @staticmethod
     def normalizeString(text: str) -> str:
@@ -151,56 +212,7 @@ class HangulAutomata(object):
             else:
                 han_char = self.alphabet_to_hangul[c]
 
-            # 초기 상태
-            if self.state is None:
-                if han_char in self.chosung_list:
-                    self.addStack(han_char)
-                    self.chosungState()
-                else:
-                    self.addBuilder(han_char)
-            # 초성 상태
-            elif self.state == "CHOSUNG":
-                if han_char in self.jungsung_list:
-                    self.addStack(han_char)
-                    self.jungsungState()
-                elif han_char in self.chosung_list:
-                    self.addBuilder(self.stack.pop())
-                    self.addStack(han_char)
-                else:
-                    self.addBuilder(self.stack.pop())
-                    self.addBuilder(han_char)
-                    self.resetState()
-            # 중성 상태
-            elif self.state == "JUNGSUNG":
-                if han_char in self.jongsung_list:
-                    self.addStack(han_char)
-                    self.jongsungState()
-                elif self.stack[-1] + han_char in self.double_jungsung_list:
-                    self.addStack(self.stack.pop() + han_char)
-                else:
-                    self.addBuilder(self.mergeChar())
-                    self.addBuilder(han_char)
-                    self.resetState()
-            # 종성 상태
-            elif self.state == "JONGSUNG":
-                if han_char in self.jungsung_list:
-                    prev = self.stack.pop()
-                    self.addBuilder(self.mergeChar())
-                    self.addStack(prev)
-                    self.addStack(han_char)
-                    self.jungsungState()
-                elif self.stack[-1] + han_char in self.double_jongsung_list:
-                    self.addStack(han_char)
-                elif han_char in self.chosung_list:
-                    self.addBuilder(self.mergeChar())
-                    self.addStack(han_char)
-                    self.chosungState()
-                else:
-                    self.addBuilder(self.mergeChar())
-                    self.addBuilder(han_char)
-                    self.resetState()
-            else:
-                print("do nothing")
+            self.stateCheck(han_char=han_char)
 
         if len(self.stack) == 1:
             self.addBuilder(self.stack.pop())
@@ -229,6 +241,24 @@ class HangulAutomata(object):
                     self.addBuilder(list(self.jongsung_indices.keys())[jong_code])
             else:
                 self.addBuilder(c)
+
+        return "".join(self.builder)
+
+    # decomposed jamo characters to hangul
+    def jamoToHan(self, text: str) -> str:
+        self.resetState()
+        self.resetStack()
+        self.resetBuilder()
+
+        for c in text:
+            self.stateCheck(han_char=c)
+
+        if len(self.stack) == 1:
+            self.addBuilder(self.stack.pop())
+        elif len(self.stack) > 1:
+            self.addBuilder(self.mergeChar())
+        else:
+            print("also do nothing")
 
         return "".join(self.builder)
 

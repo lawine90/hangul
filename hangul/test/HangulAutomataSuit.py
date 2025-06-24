@@ -19,7 +19,7 @@ class HangulAutomataTest(unittest.TestCase):
         for input, output in eng_to_han_tuple:
             result = h.engToHan(text=input)
 
-            print("engToHan input: ", "dkssudgktpdy")
+            print("engToHan input: ", input)
             print("engToHan output: ", result, "\n")
 
             self.assertEqual(first=result, second=output)
@@ -32,8 +32,8 @@ class HangulAutomataTest(unittest.TestCase):
         print("hanToJamo output: ", result1, "\n")
 
         self.assertEqual(
-            result1,
-            "ㅇㅏㄴㄴㅕㅇㅎㅏㅅㅔㅇㅛ"
+            first=result1,
+            second="ㅇㅏㄴㄴㅕㅇㅎㅏㅅㅔㅇㅛ"
         )
 
     # test3 hangul to english test
@@ -44,8 +44,8 @@ class HangulAutomataTest(unittest.TestCase):
         print("hanToEng output: ", result1, "\n")
 
         self.assertEqual(
-            result1,
-            "happy coding!"
+            first=result1,
+            second="happy coding!"
         )
 
 
